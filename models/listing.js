@@ -1,10 +1,11 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const Review = require("./review.js");
+
 const listingSchema = new Schema({
   title: {
     type: String,
-    requied: true,
+    required: true, // fixed typo: "requied" ➝ "required"
   },
   description: String,
   image: {
@@ -14,6 +15,19 @@ const listingSchema = new Schema({
   price: Number,
   location: String,
   country: String,
+
+  // ✅ Add this for OpenStreetMap
+  geometry: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      default: "Point",
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+    },
+  },
+
   reviews: [
     {
       type: Schema.Types.ObjectId,
@@ -25,7 +39,8 @@ const listingSchema = new Schema({
     ref: "User",
   },
 });
-//mongoose middleware
+
+// mongoose middleware
 listingSchema.post("findOneAndDelete", async (listing) => {
   if (listing) {
     await Review.deleteMany({ _id: { $in: listing.reviews } });
