@@ -3,40 +3,41 @@ if (process.env.NODE_ENV != "productions") {
 } //to not access credentials while production(deployed)
 
 const express = require("express");
-const app = express();
 const mongoose = require("mongoose");
-const path = require("path");
-const methodOverride = require("method-override");
+const app = express();
 
 const DBurl = process.env.ATLASDB_URL;
 
+const path = require("path");
+const methodOverride = require("method-override");
 const engine = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
+const listingRouter = require("./routes/listing.js");
+const reviewRouter = require("./routes/review.js");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("./models/user.js");
-
-const listingRouter = require("./routes/listing.js");
-const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
-app.use(methodOverride("_method"));
-app.use(express.urlencoded({ extended: true })); //for parsing
+//calling main function
 main()
   .then(() => {
     console.log("connected to DB");
   })
   .catch((err) => console.log(err));
-
+//creating a database
 async function main() {
   await mongoose.connect(DBurl);
 }
-app.engine("ejs", engine);
-app.use(express.static(path.join(__dirname, "/public")));
+
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+app.use(express.urlencoded({ extended: true })); //for parsing
+app.use(methodOverride("_method"));
+app.engine("ejs", engine);
+app.use(express.static(path.join(__dirname, "/public")));
 
 const store = MongoStore.create({
   mongoUrl: DBurl,
@@ -47,7 +48,7 @@ const store = MongoStore.create({
 });
 
 store.on("error", () => {
-  console.log("ERROR in MONGO SESSION STORE.", err);
+  console.log("ERROR in MONGO SESSION STORE", err);
 });
 
 const sessionOptions = {
@@ -62,9 +63,9 @@ const sessionOptions = {
   },
 };
 
-// app.get("/", (req, res) => {
-//   res.send("working");
-// });
+app.get("/", (req, res) => {
+  res.redirect("/listings");
+});
 
 app.use(session(sessionOptions));
 app.use(flash()); //to be written before using routes
@@ -113,4 +114,14 @@ app.use((err, req, res, next) => {
 
 app.listen(8080, () => {
   console.log("server is listening to port 8080");
+});
+
+const cloudinary = require("cloudinary").v2;
+
+cloudinary.api.ping((error, result) => {
+  if (error) {
+    console.error("Cloudinary connection failed:", error);
+  } else {
+    console.log("✅ Cloudinary is connected:", result);
+  }
 });
